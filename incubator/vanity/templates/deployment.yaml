@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+    spec:
+      containers:
+      - name: vanity
+        image: "{{ .Values.vanity.image.repository }}:{{ .Values.vanity.image.tag }}"
+        imagePullPolicy: {{ .Values.vanity.image.pullPolicy }}
+        ports:
+        - containerPort: 9192
+        args:
+          - "-addr"
+          - "127.0.0.1:9192"
+          - "-repo-root"
+          - "{{ .Values.vanity.repo_root }}"
+          - "-vanity-root"
+          - "{{ .Values.vanity.vanity_root }}"
+        # livenessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: {{ .Values.service.internalPort }}
+        # readinessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: {{ .Values.service.internalPort }}
+        resources:
+{{ toYaml .Values.vanity.resources | indent 12 }}
+
+      - name: nginx
+        image: "{{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}"
+        imagePullPolicy: {{ .Values.nginx.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.internalPort }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.service.internalPort }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.service.internalPort }}
+        # TODO nginx config
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/nginx/conf.d/vanity.conf
+          subPath: ./nginx.conf
+        resources:
+{{ toYaml .Values.nginx.resources | indent 12 }}
+
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ template "fullname" . }}
+            items:
+              - key: nginx.conf
+                path: ./nginx.conf

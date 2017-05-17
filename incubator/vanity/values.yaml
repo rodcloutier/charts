@@ -1,0 +1,40 @@
+# Default values for vanity.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+
+service:
+  name: vanity
+  type: NodePort
+  externalPort: 80
+  internalPort: 8080
+
+
+vanity:
+  image:
+    repository: xiam/vanity
+    tag: 0.2
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  repo_root: https://github.com/upper
+  vanity_root: https://upper.io
+
+nginx:
+  image:
+    repository: nginx
+    tag: stable
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
